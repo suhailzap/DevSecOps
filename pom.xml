@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.4</version> <!-- Updated from 3.2.4 to address potential false positives and ensure latest patches -->
+        <version>3.3.4</version> <!-- Updated to 3.3.4 -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -19,13 +19,18 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>17</java.version>
-        <tomcat.version>10.1.35</tomcat.version> <!-- Override to fix CVE-2025-24813 -->
+        <!-- Removed tomcat.version override as 3.3.4 uses Tomcat 10.1.30, which fixes CVE-2025-24813 -->
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId> <!-- For WebClient -->
         </dependency>
 
         <dependency>

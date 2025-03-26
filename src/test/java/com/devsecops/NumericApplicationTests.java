@@ -9,7 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -23,7 +23,7 @@ class NumericApplicationTests {
     private MockMvc mockMvc;
 
     @MockBean
-    private WebClient webClient; // Replace RestTemplate with WebClient
+    private WebClient webClient;
 
     @Test
     void welcomeMessage() throws Exception {
@@ -48,19 +48,15 @@ class NumericApplicationTests {
 
     @Test
     void incrementValue() throws Exception {
-        // Mock WebClient response
-        WebClient.RequestHeadersUriSpec<?> requestHeadersUriSpec = webClient.get();
-        when(webClient.get()).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.uri("/50")).thenReturn(requestHeadersUriSpec);
-        when(requestHeadersUriSpec.retrieve()).thenReturn(
-                WebClient.ResponseSpec.class.cast(
-                        Mono.just("51").map(body -> {
-                            WebClient.ResponseSpec responseSpec = Mockito.mock(WebClient.ResponseSpec.class);
-                            when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just(body));
-                            return responseSpec;
-                        }).block()
-                )
-        );
+        // Simplified WebClient mocking
+        WebClient.RequestHeadersUriSpec<?> uriSpec = webClient.get();
+        WebClient.RequestHeadersSpec<?> headersSpec = uriSpec.uri("/50");
+        WebClient.ResponseSpec responseSpec = headersSpec.retrieve();
+
+        doReturn(uriSpec).when(webClient).get();
+        doReturn(headersSpec).when(uriSpec).uri("/50");
+        doReturn(responseSpec).when(headersSpec).retrieve();
+        doReturn(Mono.just("51")).when(responseSpec).bodyToMono(String.class);
 
         this.mockMvc.perform(get("/increment/50")).andDo(print())
                 .andExpect(status().isOk())

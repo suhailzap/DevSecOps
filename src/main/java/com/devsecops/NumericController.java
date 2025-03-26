@@ -20,34 +20,30 @@ public class NumericController {
     public NumericController(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.baseUrl(BASE_URL).build();
     }
-    
-    @RestController
-    public class Compare {
 
-        @GetMapping("/")
-        public String welcome() {
-            return "Kubernetes DevSecOps";
-        }
+    @GetMapping("/")
+    public String welcome() {
+        return "Kubernetes DevSecOps";
+    }
 
-        @GetMapping("/compare/{value}")
-        public String compareToFifty(@PathVariable int value) {
-            if (value > 50) {
-                return "Greater than 50";
-            } else {
-                return "Smaller than or equal to 50";
-            }
+    @GetMapping("/compare/{value}")
+    public String compareToFifty(@PathVariable int value) {
+        if (value > 50) {
+            return "Greater than 50";
+        } else {
+            return "Smaller than or equal to 50";
         }
+    }
 
-        @GetMapping("/increment/{value}")
-        public int increment(@PathVariable int value) {
-            String response = webClient.get()
-                    .uri("/{value}", value)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block(); // Blocking call for simplicity; consider reactive approach for non-blocking
-            logger.info("Value Received in Request - {}", value);
-            logger.info("Node Service Response - {}", response);
-            return Integer.parseInt(response);
-        }
+    @GetMapping("/increment/{value}")
+    public int increment(@PathVariable int value) {
+        String response = webClient.get()
+                .uri("/{value}", value)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+        logger.info("Value Received in Request - {}", value);
+        logger.info("Node Service Response - {}", response);
+        return Integer.parseInt(response);
     }
 }
