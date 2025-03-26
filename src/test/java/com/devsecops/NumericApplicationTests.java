@@ -48,13 +48,13 @@ class NumericApplicationTests {
     }
 
     @Test
-    @SuppressWarnings("unchecked") // Suppress type warnings for Mockito generics
     void incrementValue() throws Exception {
         // Mock the WebClient chain
         WebClient.RequestHeadersUriSpec<?> uriSpec = mock(WebClient.RequestHeadersUriSpec.class);
         WebClient.RequestHeadersSpec<?> headersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
+        // Use lenient mocking to ensure all calls are intercepted
         doReturn(uriSpec).when(webClient).get();
         doReturn(headersSpec).when(uriSpec).uri("/50");
         doReturn(responseSpec).when(headersSpec).retrieve();
