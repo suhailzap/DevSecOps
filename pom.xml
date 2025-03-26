@@ -89,7 +89,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-               <!-- <version>6.1.6</version>  Updated to latest as of March 2025 -->
+                <version>12.1.0</version> <!-- Updated to latest as of March 2025 -->
                 <configuration>
                     <format>ALL</format>
                     <failBuildOnCVSS>8</failBuildOnCVSS>
