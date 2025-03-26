@@ -9,8 +9,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -48,16 +48,17 @@ class NumericApplicationTests {
     }
 
     @Test
+    @SuppressWarnings("unchecked") // Suppress type warnings for Mockito generics
     void incrementValue() throws Exception {
         // Mock the WebClient chain
         WebClient.RequestHeadersUriSpec<?> uriSpec = mock(WebClient.RequestHeadersUriSpec.class);
         WebClient.RequestHeadersSpec<?> headersSpec = mock(WebClient.RequestHeadersSpec.class);
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
-        when(webClient.get()).thenReturn(uriSpec);
-        when(uriSpec.uri("/50")).thenReturn(headersSpec);
-        when(headersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just("51"));
+        doReturn(uriSpec).when(webClient).get();
+        doReturn(headersSpec).when(uriSpec).uri("/50");
+        doReturn(responseSpec).when(headersSpec).retrieve();
+        doReturn(Mono.just("51")).when(responseSpec).bodyToMono(String.class);
 
         this.mockMvc.perform(get("/increment/50")).andDo(print())
                 .andExpect(status().isOk())
