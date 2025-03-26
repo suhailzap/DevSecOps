@@ -20,6 +20,7 @@ class NumericApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @SuppressWarnings("deprecation") // Suppress if tool insists on deprecation
     @MockBean
     private WebClient webClient;
 
