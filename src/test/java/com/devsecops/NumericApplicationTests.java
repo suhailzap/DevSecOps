@@ -7,6 +7,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -52,7 +53,7 @@ class NumericApplicationTests {
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         doReturn(uriSpec).when(webClient).get();
-        doReturn(headersSpec).when(uriSpec).uri("/plusone/{value}", 50); // Match the exact URI template
+        doReturn(headersSpec).when(uriSpec).uri("/plusone/{value}", 50);
         doReturn(responseSpec).when(headersSpec).retrieve();
         doReturn(Mono.just("51")).when(responseSpec).bodyToMono(String.class);
 
