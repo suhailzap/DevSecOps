@@ -1,6 +1,6 @@
 package com.devsecops;
 
-import org.junit.jupiter.api.Test; // Updated to JUnit 5
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -49,7 +49,8 @@ public class NumericApplicationTests {
 
     @Test
     public void incrementValue() throws Exception {
-        when(restTemplate.getForEntity(any(String.class), any(Class.class)))
+        // Mock the exact URL and response
+        when(restTemplate.getForEntity("http://node-service:5000/plusone/50", String.class))
                 .thenReturn(ResponseEntity.ok("51"));
 
         this.mockMvc.perform(get("/increment/50")).andDo(print())
