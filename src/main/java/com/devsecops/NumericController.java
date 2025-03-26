@@ -11,8 +11,8 @@ import org.springframework.web.client.RestTemplate;
 @RestController
 public class NumericController {
 
-	private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-	private static final String BASEURL = "http://node-service:5000/plusone";
+	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final String baseURL = "http://node-service:5000/plusone";
 	
 	RestTemplate restTemplate = new RestTemplate();
 	
