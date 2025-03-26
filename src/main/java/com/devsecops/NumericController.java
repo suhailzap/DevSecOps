@@ -12,13 +12,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class NumericController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private static final String BASE_URL = "http://node-service:5000/plusone";
-    
     private final WebClient webClient;
 
     @Autowired
-    public NumericController(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl(BASE_URL).build();
+    public NumericController(WebClient webClient) {
+        this.webClient = webClient;
     }
 
     @GetMapping("/")
@@ -38,7 +36,7 @@ public class NumericController {
     @GetMapping("/increment/{value}")
     public int increment(@PathVariable int value) {
         String response = webClient.get()
-                .uri("/{value}", value)
+                .uri("/plusone/{value}", value)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
