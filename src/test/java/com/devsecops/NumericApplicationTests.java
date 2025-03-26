@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -18,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class NumericApplicationTests {
+class NumericApplicationTests { // Removed 'public'
 
     @Autowired
     private MockMvc mockMvc;
@@ -27,33 +26,31 @@ public class NumericApplicationTests {
     private RestTemplate restTemplate;
 
     @Test
-    public void welcomeMessage() throws Exception {
+    void welcomeMessage() throws Exception { // Removed 'public'
         this.mockMvc.perform(get("/")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Kubernetes DevSecOps"));
     }
 
     @Test
-    public void smallerThanOrEqualToFiftyMessage() throws Exception {
+    void smallerThanOrEqualToFiftyMessage() throws Exception { // Removed 'public'
         this.mockMvc.perform(get("/compare/50")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Smaller than or equal to 50"));
     }
 
     @Test
-    public void greaterThanFiftyMessage() throws Exception {
+    void greaterThanFiftyMessage() throws Exception { // Removed 'public'
         this.mockMvc.perform(get("/compare/51")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Greater than 50"));
     }
 
     @Test
-    public void incrementValue() throws Exception {
-        // Mock the RestTemplate response for the specific URL
-        when(restTemplate.getForEntity(
-                eq("http://node-service:5000/plusone/50"), 
-                eq(String.class)
-        )).thenReturn(ResponseEntity.ok("51"));
+    void incrementValue() throws Exception { // Removed 'public'
+        // Mock the RestTemplate response for the specific URL, removed 'eq()'
+        when(restTemplate.getForEntity("http://node-service:5000/plusone/50", String.class))
+                .thenReturn(ResponseEntity.ok("51"));
 
         this.mockMvc.perform(get("/increment/50")).andDo(print())
                 .andExpect(status().isOk())
