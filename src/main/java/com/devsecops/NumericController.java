@@ -17,7 +17,7 @@ public class NumericController {
     RestTemplate restTemplate = new RestTemplate();
     
     @RestController
-    public class compare {
+    public class Compare {  // Renamed from 'compare' to 'Compare'
 
         @GetMapping("/")
         public String welcome() {
