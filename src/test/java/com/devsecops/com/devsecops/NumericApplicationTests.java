@@ -20,6 +20,7 @@ class NumericApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @SuppressWarnings("removal")
     @MockBean
     private WebClient webClient;
 
