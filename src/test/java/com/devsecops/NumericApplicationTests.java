@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.RestTemplate;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -27,6 +27,13 @@ public class NumericApplicationTests {
     private RestTemplate restTemplate;
 
     @Test
+    public void welcomeMessage() throws Exception {
+        this.mockMvc.perform(get("/")).andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().string("Kubernetes DevSecOps"));
+    }
+
+    @Test
     public void smallerThanOrEqualToFiftyMessage() throws Exception {
         this.mockMvc.perform(get("/compare/50")).andDo(print())
                 .andExpect(status().isOk())
@@ -41,17 +48,12 @@ public class NumericApplicationTests {
     }
 
     @Test
-    public void welcomeMessage() throws Exception {
-        this.mockMvc.perform(get("/")).andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(content().string("Kubernetes DevSecOps"));
-    }
-
-    @Test
     public void incrementValue() throws Exception {
-        // Mock the exact URL and response
-        when(restTemplate.getForEntity("http://node-service:5000/plusone/50", String.class))
-                .thenReturn(ResponseEntity.ok("51"));
+        // Mock the RestTemplate response for the specific URL
+        when(restTemplate.getForEntity(
+                eq("http://node-service:5000/plusone/50"), 
+                eq(String.class)
+        )).thenReturn(ResponseEntity.ok("51"));
 
         this.mockMvc.perform(get("/increment/50")).andDo(print())
                 .andExpect(status().isOk())
