@@ -3,53 +3,46 @@
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @RestController
-<span class="fc" id="L18">public class NumericController {</span>
+public class NumericController {
 
-<span class="fc" id="L20">	private final Logger logger = LoggerFactory.getLogger(getClass());</span>
-	private static final String baseURL = &quot;http://node-service:5000/plusone&quot;;
-	
-<span class="fc" id="L23">	RestTemplate restTemplate = new RestTemplate();</span>
-	
-	@RestController
-<span class="fc" id="L26">	public class compare {</span>
+<span class="fc" id="L14">    private final Logger logger = LoggerFactory.getLogger(getClass());</span>
+    private final WebClient webClient;
 
-		@GetMapping(&quot;/&quot;)
-		public String welcome() {
-<span class="fc" id="L30">			return &quot;Kubernetes DevSecOps&quot;;</span>
-		}
+    @Autowired
+<span class="fc" id="L18">    public NumericController(WebClient webClient) {</span>
+<span class="fc" id="L19">        this.webClient = webClient;</span>
+<span class="fc" id="L20">    }</span>
 
-		@GetMapping(&quot;/compare/{value}&quot;)
-		public String compareToFifty(@PathVariable int value) {
-<span class="fc" id="L35">			String message = &quot;Could not determine comparison&quot;;</span>
-<span class="fc bfc" id="L36" title="All 2 branches covered.">			if (value &gt; 50) {</span>
-<span class="fc" id="L37">				message = &quot;Greater than 50&quot;;</span>
-			} else {
-<span class="fc" id="L39">				message = &quot;Smaller than or equal to 50&quot;;</span>
-			}
-<span class="fc" id="L41">			return message;</span>
-		}
+    @GetMapping(&quot;/&quot;)
+    public String welcome() {
+<span class="fc" id="L24">        return &quot;Kubernetes DevSecOps&quot;;</span>
+    }
 
-		@GetMapping(&quot;/increment/{value}&quot;)
-		public int increment(@PathVariable int value) {
-<span class="nc" id="L46">			ResponseEntity&lt;String&gt; responseEntity = restTemplate.getForEntity(baseURL + '/' + value, String.class);</span>
-<span class="nc" id="L47">			String response = responseEntity.getBody();</span>
-<span class="nc" id="L48">			logger.info(&quot;Value Received in Request - &quot; + value);</span>
-<span class="nc" id="L49">			logger.info(&quot;Node Service Response - &quot; + response);</span>
-<span class="nc" id="L50">			return Integer.parseInt(response);</span>
-		}
-	}
+    @GetMapping(&quot;/compare/{value}&quot;)
+    public String compareToFifty(@PathVariable int value) {
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        if (value &gt; 50) {</span>
+<span class="fc" id="L30">            return &quot;Greater than 50&quot;;</span>
+        } else {
+<span class="fc" id="L32">            return &quot;Smaller than or equal to 50&quot;;</span>
+        }
+    }
 
+    @GetMapping(&quot;/increment/{value}&quot;)
+    public int increment(@PathVariable int value) {
+<span class="fc" id="L38">        String response = webClient.get()</span>
+<span class="fc" id="L39">                .uri(&quot;/plusone/{value}&quot;, value)</span>
+<span class="fc" id="L40">                .retrieve()</span>
+<span class="fc" id="L41">                .bodyToMono(String.class)</span>
+<span class="fc" id="L42">                .block();</span>
+<span class="fc" id="L43">        logger.info(&quot;Value Received in Request - {}&quot;, value);</span>
+<span class="fc" id="L44">        logger.info(&quot;Node Service Response - {}&quot;, response);</span>
+<span class="fc" id="L45">        return Integer.parseInt(response);</span>
+    }
 }
-</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
