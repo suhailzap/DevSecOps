@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.4</version>
+        <version>3.2.5</version> <!-- Updated from 3.2.4 to address potential false positives and ensure latest patches -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -18,7 +18,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>17</java.version> <!-- Updated to Java 17 -->
+        <java.version>17</java.version>
+        <tomcat.version>10.1.35</tomcat.version> <!-- Override to fix CVE-2025-24813 -->
     </properties>
 
     <dependencies>
@@ -41,6 +42,7 @@
 
     <build>
         <plugins>
+            <!-- Spring Boot Maven Plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -50,7 +52,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.11</version> <!-- Updated to latest compatible version -->
+                <version>0.8.11</version>
                 <executions>
                     <execution>
                         <goals>
@@ -71,12 +73,12 @@
             <plugin>
                 <groupId>org.pitest</groupId>
                 <artifactId>pitest-maven</artifactId>
-                <version>1.15.0</version> <!-- Updated to latest version -->
+                <version>1.15.0</version>
                 <dependencies>
                     <dependency>
                         <groupId>org.pitest</groupId>
                         <artifactId>pitest-junit5-plugin</artifactId>
-                        <version>1.2.1</version> <!-- Updated to latest -->
+                        <version>1.2.1</version>
                     </dependency>
                 </dependencies>
                 <configuration>
@@ -92,7 +94,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>6.1.6</version> <!-- Updated to latest version -->
+                <version>6.1.6</version>
                 <configuration>
                     <format>ALL</format>
                     <failBuildOnCVSS>8</failBuildOnCVSS>
