@@ -6,7 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.4.4</version>
-        <relativePath/>
+        <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
     <groupId>com.devsecops</groupId>
@@ -19,7 +19,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>17</java.version>
-        <jackson.version>2.18.3</jackson.version> <!-- Ensure latest Jackson -->
+        <jackson.version>2.18.3</jackson.version> <!-- Latest Jackson as of March 2025 -->
+        <maven.compiler.source>17</maven.compiler.source> <!-- Explicit Java 17 source -->
+        <maven.compiler.target>17</maven.compiler.target> <!-- Explicit Java 17 target -->
     </properties>
 
     <dependencies>
@@ -47,6 +49,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.4.4</version> <!-- Match parent version -->
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -54,6 +57,7 @@
                 <version>0.8.11</version>
                 <executions>
                     <execution>
+                        <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
@@ -79,28 +83,54 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <mutationThreshold>70</mutationThreshold>
+                    <targetClasses>
+                        <param>com.devsecops.*</param> <!-- Scope to your package -->
+                    </targetClasses>
+                    <targetTests>
+                        <param>com.devsecops.*</param> <!-- Scope to your tests -->
+                    </targetTests>
+                    <mutationThreshold>70</mutationThreshold> <!-- Fail if below 70% -->
                     <outputFormats>
                         <outputFormat>XML</outputFormat>
                         <outputFormat>HTML</outputFormat>
                     </outputFormats>
+                    <timestampedReports>false</timestampedReports> <!-- Fixed report dir -->
+                    <reportDir>${project.build.directory}/pit-reports</reportDir> <!-- Explicit dir -->
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>12.1.0</version> <!-- Updated to latest as of March 2025 -->
+                <version>12.1.0</version> <!-- Latest as of March 2025 -->
                 <configuration>
                     <format>ALL</format>
-                    <failBuildOnCVSS>8</failBuildOnCVSS>
+                    <failBuildOnCVSS>8</failBuildOnCVSS> <!-- Fail on CVSS >= 8 -->
+                    <suppressionFiles>
+                        <suppressionFile>${project.basedir}/suppressions.xml</suppressionFile> <!-- Suppress false positives -->
+                    </suppressionFiles>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>check</id>
                         <goals>
                             <goal>check</goal>
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version> <!-- Latest stable -->
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>4.0.0.4121</version> <!-- Latest as of March 2025 -->
             </plugin>
         </plugins>
     </build>
