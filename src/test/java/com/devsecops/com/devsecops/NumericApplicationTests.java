@@ -1,4 +1,4 @@
-package com.devsecops;
+package com.devsecops.com.devsecops;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

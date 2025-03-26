@@ -1,4 +1,4 @@
-package com.devsecops;
+package com.devsecops.com.devsecops;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
