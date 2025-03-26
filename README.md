@@ -15,3 +15,6 @@
 `kubectl expose deploy node-app --name node-service --port 5000 --type ClusterIP`
 
 `curl node-service-ip:5000/plusone/99`
+
+trivy-check
+'docker run --rm aquasec/trivy -q image --exit-code 1 --light bellsoft/liberica-openjdk-alpine:17'
