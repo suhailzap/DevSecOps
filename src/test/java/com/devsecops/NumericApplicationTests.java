@@ -20,7 +20,7 @@ class NumericApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
-    // @MockBean
+    @MockBean
     private WebClient webClient;
 
     @Test
