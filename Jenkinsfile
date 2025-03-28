@@ -1,6 +1,17 @@
 pipeline {
   agent any
 
+
+
+  environment {
+    deploymentName = "devsecops"
+    containerName = "devsecops-container"
+    serviceName = "devsecops-svc"
+    imageName = "suhailsap06/numeric-app:${GIT_COMMIT}"
+    applicationURL="devsecops-k8.eastus.cloudapp.azure.com
+    applicationURI="/increment/99"
+  }
+
   stages {
 
     stage('Build Artifact - Maven') {
@@ -68,15 +79,23 @@ pipeline {
             }
         }
 
-        stage('Kubernetes Deployment - Dev') {
-            steps {
-                withKubeConfig([credentialsId: 'kubeconfig']) {
-                    sh "sed -i 's#replace#suhailsap06/numeric-app:${GIT_COMMIT}#g' k8s_deployment_service.yaml"
-                    sh 'kubectl apply -f k8s_deployment_service.yaml'
-                }
+    stage('K8S Deployment - DEV') {
+      steps {
+        parallel(
+          "Deployment": {
+            withKubeConfig([credentialsId: 'kubeconfig']) {
+              sh "bash k8s-deployment.sh"
             }
-        }
+          },
+          "Rollout Status": {
+            withKubeConfig([credentialsId: 'kubeconfig']) {
+              sh "bash k8s-deployment-rollout-status.sh"
+            }
+          }
+        )
+      }
     }
+  }
 
     post {
         always {
@@ -86,4 +105,4 @@ pipeline {
           dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
         }
     }
-}
+  }
