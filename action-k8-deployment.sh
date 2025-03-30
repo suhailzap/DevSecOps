@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 echo "DEPLOYMENT_NAME: ${DEPLOYMENT_NAME}"
 echo "CONTAINER_NAME: ${CONTAINER_NAME}"
 echo "IMAGE_NAME: ${IMAGE_NAME}"
