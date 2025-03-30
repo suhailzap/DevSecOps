@@ -267,7 +267,7 @@ jobs:
           chmod 600 $HOME/.kube/config
 
       - name: Deploy to Kubernetes
-        run: bash k8s-deployment.sh
+        run: bash action-k8-deployment.sh
 
       - name: Check Rollout Status
         run: bash k8s-deployment-rollout-status.sh
