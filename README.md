@@ -1,4 +1,3 @@
-Below is an updated `README.md` tailored for a **Demo Project** instead of a course, based on your DevSecOps document. It incorporates the GitHub repository `https://github.com/suhailzap/DevSecOps` and mentions an alternative CI/CD setup using GitHub Actions. The README remains colorful, well-explained, and includes diagram placeholders. I've also tied it to your specific deployment (`suhailsap06/numeric-app`) and the workflow you shared earlier.
 
 ---
 
@@ -243,4 +242,3 @@ Enjoy this demo, and happy securing! 🎉
 3. **Jenkins Alternative**: Highlights GitHub Actions as the primary CI/CD, with Jenkins as an optional alternative.
 4. **Customization**: Replace placeholders (e.g., `<commit-sha>`) with dynamic variables like `${{ github.sha }}` in the workflow.
 
-Push this to your repo and let me know if you need further tweaks!
