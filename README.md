@@ -236,9 +236,4 @@ Enjoy this demo, and happy securing! 🎉
 
 ---
 
-### Notes
-1. **Diagrams**: Add the Mermaid code directly in the README. For more complex visuals, create PNGs and upload to `/images/`.
-2. **Repo Structure**: Assumes `/src/`, `/k8s/`, and `/action-k8-deployment.sh`. Adjust paths if different.
-3. **Jenkins Alternative**: Highlights GitHub Actions as the primary CI/CD, with Jenkins as an optional alternative.
-4. **Customization**: Replace placeholders (e.g., `<commit-sha>`) with dynamic variables like `${{ github.sha }}` in the workflow.
 
