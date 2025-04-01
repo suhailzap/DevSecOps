@@ -20,10 +20,10 @@ if [ ! -x "$0" ]; then
 fi
 echo "Running as UID:GID $(id -u):$(id -g)"
 
-# Pull the OWASP ZAP image from GitHub Container Registry with error handling
+# Pull the OWASP ZAP image from Docker Hub with error handling
 echo "Pulling OWASP ZAP image..."
-docker pull zaproxy/zap-stable|| {
-  echo "Failed to pull ghcr.io/zaproxy/zap-stable:latest. Check Docker Hub access, network, or try 'docker login ghcr.io' if authentication is required."
+docker pull zaproxy/zap-stable:latest || {
+  echo "Failed to pull zaproxy/zap-stable:latest. Check Docker Hub access or network."
   exit 1
 }
 
@@ -33,9 +33,9 @@ curl -s --connect-timeout 5 "http://$applicationURL:$PORT/v3/api-docs" >/dev/nul
   echo "Warning: Could not reach http://$applicationURL:$PORT/v3/api-docs. Proceeding anyway..."
 }
 
-# Run OWASP ZAP scan
+# Run OWASP ZAP scan using the pulled image
 echo "Running OWASP ZAP scan on http://$applicationURL:$PORT/v3/api-docs..."
-docker run -v "$(pwd)":/zap/wrk/:rw -t ghcr.io/zaproxy/zap-stable:latest zap-api-scan.py \
+docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable:latest zap-api-scan.py \
   -t "http://$applicationURL:$PORT/v3/api-docs" \
   -f openapi \
   -r zap_report.html || {
