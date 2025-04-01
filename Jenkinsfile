@@ -134,15 +134,7 @@ pipeline {
           jacoco execPattern: 'target/jacoco.exec'
           pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
           dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-          // publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap_report.html', reportName: 'zap_report.htmlOWASP ZAP HTML REPORT', reportTitles: 'zap_report.htmlOWASP ZAP HTML REPORT', useWrapperFileDirectly: true])
-          publishHTML([allowMissing: true, 
-                 alwaysLinkToLastBuild: true, 
-                 keepAll: true, 
-                 reportDir: 'owasp-zap-report', 
-                 reportFiles: 'zap_report.html', 
-                 reportName: 'OWASP ZAP Report', 
-                 reportTitles: 'OWASP ZAP Scan Results'])
-          archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
+          publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap_report.html', reportName: 'OWASP ZAP HTML Report', reportTitles: 'OWASP ZAP HTML Report', useWrapperFileDirectly: true])
         }
     }
   }
