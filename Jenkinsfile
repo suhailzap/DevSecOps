@@ -135,6 +135,7 @@ pipeline {
           pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
           dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
           publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap_report.html', reportName: 'zap_report.htmlOWASP ZAP HTML REPORT', reportTitles: 'zap_report.htmlOWASP ZAP HTML REPORT', useWrapperFileDirectly: true])
+          archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
         }
     }
   }
