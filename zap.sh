@@ -22,7 +22,7 @@ echo "Running as UID:GID $(id -u):$(id -g)"
 
 # Pull the OWASP ZAP image from GitHub Container Registry with error handling
 echo "Pulling OWASP ZAP image..."
-docker pull ghcr.io/zaproxy/zap-stable:latest || {
+docker pull zaproxy/zap-stable|| {
   echo "Failed to pull ghcr.io/zaproxy/zap-stable:latest. Check Docker Hub access, network, or try 'docker login ghcr.io' if authentication is required."
   exit 1
 }
