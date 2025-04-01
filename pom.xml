@@ -91,22 +91,23 @@
 			        </outputFormats>
 			    </configuration>
 			   </plugin>
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>12.1.0</version> <!-- Updated to latest as of March 2025 -->
-                <configuration>
-                    <format>ALL</format>
-                    <failBuildOnCVSS>8</failBuildOnCVSS>
-                </configuration>
-                <executions>
+               <plugin>
+                  <groupId>org.owasp</groupId>
+                  <artifactId>dependency-check-maven</artifactId>
+                  <version>12.1.0</version>
+                  <configuration>
+                      <format>ALL</format>
+                      <failBuildOnCVSS>8</failBuildOnCVSS>
+                  </configuration>
+                  <executions>
                     <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
+                      <phase>package</phase>
+                      <goals>
+                          <goal>check</goal>
+                      </goals>
                     </execution>
-                </executions>
-            </plugin>
+                 </executions>
+               </plugin>
         </plugins>
     </build>
 </project>

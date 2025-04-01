@@ -45,21 +45,22 @@ pipeline {
       }
     }
 
-    stage('Vulnerability Scan - Docker') {
-      steps {
-        parallel(
-          "Dependency Scan": {
-            sh "mvn dependency-check:check"
-          },
-          "Trivy Scan": {
-            sh "bash trivy-docker-image-scan.sh"
-          },
-          "OPA Conftest": {
-            sh 'docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile'
-          }
-        )
+stage('Vulnerability Scan - Docker') {
+  steps {
+    parallel(
+      "Dependency Scan": {
+        sh "mvn dependency-check:check"
+        sh "ls -l target/dependency-check-report.xml || echo 'Dependency-Check report not found'"
+      },
+      "Trivy Scan": {
+        sh "bash trivy-docker-image-scan.sh"
+      },
+      "OPA Conftest": {
+        sh 'docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile'
       }
-    }
+    )
+  }
+}
 
         stage('Docker Build and Push') {
             steps {
@@ -128,13 +129,20 @@ pipeline {
     }
    }
 
-    post {
-        always {
-          junit 'target/surefire-reports/*.xml'
-          jacoco execPattern: 'target/jacoco.exec'
-          pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
-          dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-          publishHTML([allowMissing: false, alwaysLinkToLastBuild: true, icon: '', keepAll: true, reportDir: 'owasp-zap-report', reportFiles: 'zap_report.html', reportName: 'OWASP ZAP HTML Report', reportTitles: 'OWASP ZAP HTML Report', useWrapperFileDirectly: true])
-        }
-    }
+post {
+  always {
+    junit 'target/surefire-reports/*.xml'
+    jacoco execPattern: 'target/jacoco.exec'
+    pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
+    dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+    publishHTML([allowMissing: true, 
+                 alwaysLinkToLastBuild: true, 
+                 keepAll: true, 
+                 reportDir: 'owasp-zap-report', 
+                 reportFiles: 'zap_report.html', 
+                 reportName: 'OWASP ZAP Report', 
+                 reportTitles: 'OWASP ZAP Scan Results'])
+    archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
+   }
   }
+}
