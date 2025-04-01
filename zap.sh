@@ -14,16 +14,16 @@ if [ -z "$PORT" ] || [ "$PORT" == "null" ]; then
   exit 1
 fi
 
-# Ensure the script has proper permissions (self-modify only if needed, avoid chmod 777)
+# Ensure the script has proper permissions (self-modify only if needed)
 if [ ! -x "$0" ]; then
   chmod u+x "$0"
 fi
 echo "Running as UID:GID $(id -u):$(id -g)"
 
-# Pull the OWASP ZAP image explicitly with error handling
+# Pull the OWASP ZAP image from GitHub Container Registry with error handling
 echo "Pulling OWASP ZAP image..."
-docker pull owasp/zap2docker-stable:latest || {
-  echo "Failed to pull owasp/zap2docker-stable:latest. Check Docker Hub access or network."
+docker pull ghcr.io/zaproxy/zap-stable:latest || {
+  echo "Failed to pull ghcr.io/zaproxy/zap-stable:latest. Check Docker Hub access, network, or try 'docker login ghcr.io' if authentication is required."
   exit 1
 }
 
@@ -35,7 +35,7 @@ curl -s --connect-timeout 5 "http://$applicationURL:$PORT/v3/api-docs" >/dev/nul
 
 # Run OWASP ZAP scan
 echo "Running OWASP ZAP scan on http://$applicationURL:$PORT/v3/api-docs..."
-docker run -v "$(pwd)":/zap/wrk/:rw -t owasp/zap2docker-stable:latest zap-api-scan.py \
+docker run -v "$(pwd)":/zap/wrk/:rw -t ghcr.io/zaproxy/zap-stable:latest zap-api-scan.py \
   -t "http://$applicationURL:$PORT/v3/api-docs" \
   -f openapi \
   -r zap_report.html || {
@@ -46,7 +46,7 @@ docker run -v "$(pwd)":/zap/wrk/:rw -t owasp/zap2docker-stable:latest zap-api-sc
 # Capture exit code
 exit_code=$?
 
-# Create report directory and move the report (avoid sudo if possible)
+# Create report directory and move the report
 mkdir -p owasp-zap-report
 if [ -f zap_report.html ]; then
   mv zap_report.html owasp-zap-report/
