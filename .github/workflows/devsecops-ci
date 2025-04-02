@@ -1,0 +1,404 @@
+name: DevSecOps Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  checks: write  # For publishing test results as check runs
+  contents: read # For checking out code
+  actions: write # For workflow approvals
+
+env:
+  DEPLOYMENT_NAME: "devsecops"
+  CONTAINER_NAME: "devsecops-container"
+  SERVICE_NAME: "devsecops-svc"
+  IMAGE_NAME: "suhailsap06/numeric-app:${{ github.sha }}"
+  APPLICATION_URL: "devsecops-k8.eastus.cloudapp.azure.com"
+  APPLICATION_URI: "/increment/99"
+
+jobs:
+  build-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests=true
+
+      - name: Archive Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run Unit Tests
+        run: mvn test
+
+      - name: Publish JUnit Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: "target/surefire-reports/*.xml"
+
+      - name: Publish JaCoCo Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/jacoco.exec
+
+  mutation-tests:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run PIT Mutation Tests
+        run: mvn org.pitest:pitest-maven:mutationCoverage
+
+      - name: Archive PIT Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pit-report
+          path: "**/target/pit-reports/**/mutations.xml"
+
+  sonarqube-sast:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run SonarQube Scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "http://devsecops-k8.eastus.cloudapp.azure.com:9000"
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=numeric-application \
+            -Dsonar.host.url=${SONAR_HOST_URL} \
+            -Dsonar.token=${SONAR_TOKEN}
+
+  vulnerability-scan-docker:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Dependency Scan
+        run: mvn dependency-check:check
+
+      - name: Archive Dependency Check Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.xml
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: ${{ runner.os }}-trivy-${{ hashFiles('.trivyignore') }}
+          restore-keys: |
+            ${{ runner.os }}-trivy-
+
+      - name: Trivy Docker Image Scan
+        run: bash trivy-docker-image-scan.sh
+
+      - name: OPA Conftest Docker Scan
+        run: docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile
+
+  docker-build-push:
+    runs-on: ubuntu-latest
+    needs: vulnerability-scan-docker
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker Layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        run: |
+          docker buildx build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache \
+            -t ${{ env.IMAGE_NAME }} \
+            --push \
+            .
+
+  vulnerability-scan-kubernetes:
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: ${{ runner.os }}-trivy-${{ hashFiles('.trivyignore') }}
+          restore-keys: |
+            ${{ runner.os }}-trivy-
+
+      - name: OPA Scan Kubernetes
+        run: docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-k8s-security.rego k8s_deployment_service.yaml
+
+      - name: Kubesec Scan
+        run: bash kubesec-scan.sh
+
+      - name: Trivy Kubernetes Scan
+        run: bash trivy-k8s-scan.sh
+
+  k8s-deployment-dev:
+    runs-on: ubuntu-latest
+    needs: vulnerability-scan-kubernetes
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy to Kubernetes (DEV)
+        run: bash k8s-deployment.sh
+
+      - name: Check Rollout Status (DEV)
+        run: bash k8s-deployment-rollout-status.sh
+
+  integration-tests-dev:
+    runs-on: ubuntu-latest
+    needs: k8s-deployment-dev
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Run Integration Tests (DEV)
+        run: bash integration-test.sh
+        continue-on-error: true
+
+      - name: Rollback on Failure
+        if: failure()
+        run: kubectl -n default rollout undo deploy ${{ env.DEPLOYMENT_NAME }}
+
+  prompt-to-prod:
+    runs-on: ubuntu-latest
+    needs: integration-tests-dev
+    steps:
+      - name: Request Production Deployment Approval
+        uses: trstringer/manual-workflow-approval@v1
+        with:
+          timeout-minutes: 2880  # 2 days in minutes
+          prompt: "Do you want to Approve the Deployment to Production Environment/Namespace?"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  k8s-cis-benchmark:
+    runs-on: ubuntu-latest
+    needs: prompt-to-prod
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Run CIS Benchmark Checks
+        run: |
+          bash cis-master.sh &
+          bash cis-etcd.sh &
+          bash cis-kubelet.sh &
+          wait
+
+  k8s-deployment-prod:
+    runs-on: ubuntu-latest
+    needs: k8s-cis-benchmark
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy to Kubernetes (PROD)
+        run: |
+          sed -i "s#replace#${{ env.IMAGE_NAME }}#g" k8s_PROD-deployment_service.yaml
+          kubectl -n prod apply -f k8s_PROD-deployment_service.yaml
+
+      - name: Check Rollout Status (PROD)
+        run: bash k8s-PROD-deployment-rollout-status.sh
+
+  integration-tests-prod:
+    runs-on: ubuntu-latest
+    needs: k8s-deployment-prod
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Run Integration Tests (PROD)
+        run: bash integration-test-PROD.sh
+        continue-on-error: true
+
+      - name: Rollback on Failure
+        if: failure()
+        run: kubectl -n prod rollout undo deploy ${{ env.DEPLOYMENT_NAME }}
+
+  # Simulated Slack Testing (Replace with actual Slack action if needed)
+  slack-test-1:
+    runs-on: ubuntu-latest
+    needs: integration-tests-prod
+    steps:
+      - name: Slack Test 1
+        run: echo "Simulated Slack notification for success"
+
+  slack-test-error:
+    runs-on: ubuntu-latest
+    needs: integration-tests-prod
+    steps:
+      - name: Slack Test Error
+        run: echo "Simulated Slack notification for error"

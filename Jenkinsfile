@@ -120,14 +120,34 @@ stage('Vulnerability Scan - Docker') {
         }
       }
     }  
-   stage('OWASP ZAP - DAST') {
+  //  stage('OWASP ZAP - DAST') {
+  //     steps {
+  //       withKubeConfig([credentialsId: 'kubeconfig']) {
+  //         sh 'bash zap.sh'
+  //       }
+  //     }
+  //   }
+
+           stage('K8S CIS Benchmark') {
       steps {
-        withKubeConfig([credentialsId: 'kubeconfig']) {
-          sh 'bash zap.sh'
+        script {
+
+          parallel(
+            "Master": {
+              sh "bash cis-master.sh"
+            },
+            "Etcd": {
+              sh "bash cis-etcd.sh"
+            },
+            "Kubelet": {
+              sh "bash cis-kubelet.sh"
+            }
+          )
+
         }
       }
     }
-   }
+  }
 
 post {
   always {
@@ -135,14 +155,14 @@ post {
     jacoco execPattern: 'target/jacoco.exec'
     pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
     dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-    publishHTML([allowMissing: true, 
-                 alwaysLinkToLastBuild: true, 
-                 keepAll: true, 
-                 reportDir: 'owasp-zap-report', 
-                 reportFiles: 'zap_report.html', 
-                 reportName: 'OWASP ZAP Report', 
-                 reportTitles: 'OWASP ZAP Scan Results'])
-    archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
+    // publishHTML([allowMissing: true, 
+    //              alwaysLinkToLastBuild: true, 
+    //              keepAll: true, 
+    //              reportDir: 'owasp-zap-report', 
+    //              reportFiles: 'zap_report.html', 
+    //              reportName: 'OWASP ZAP Report', 
+    //              reportTitles: 'OWASP ZAP Scan Results'])
+    // archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
    }
   }
 }
