@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -15,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(NumericController.class)
+@WithMockUser(username = "user", roles = {"USER"}) // Mock an authenticated user
 class NumericApplicationTests {
 
     @Autowired
@@ -53,7 +55,7 @@ class NumericApplicationTests {
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         doReturn(uriSpec).when(webClient).get();
-        doReturn(headersSpec).when(uriSpec).uri("/plusone/{value}", 50); // Match the exact URI template
+        doReturn(headersSpec).when(uriSpec).uri("/plusone/{value}", 50);
         doReturn(responseSpec).when(headersSpec).retrieve();
         doReturn(Mono.just("51")).when(responseSpec).bodyToMono(String.class);
 
