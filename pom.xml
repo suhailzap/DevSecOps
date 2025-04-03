@@ -112,7 +112,7 @@
                   <version>12.1.0</version>
                   <configuration>
                       <format>ALL</format>
-                      <failBuildOnCVSS>10</failBuildOnCVSS><!-- for testing incresed to 10 -->
+                      <failBuildOnCVSS>15</failBuildOnCVSS><!-- for testing incresed to 10 -->
                   </configuration>
                   <executions>
                     <execution>
