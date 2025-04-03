@@ -13,7 +13,6 @@ public class NumericController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final String BASE_URL = "http://node-service:5000/plusone";
-    // private static final String BASE_URL = "http://localhost:5000/plusone"; // Uncomment for local testing
 
     private final RestTemplate restTemplate;
 
@@ -28,21 +27,20 @@ public class NumericController {
 
     @GetMapping("/compare/{value}")
     public String compareToFifty(@PathVariable int value) {
-        String message = "Could not determine comparison";
+        // Removed useless assignment to 'message'
         if (value > 50) {
-            message = "Greater than 50";
-        } else {
-            message = "Smaller than or equal to 50";
+            return "Greater than 50";
         }
-        return message;
+        return "Smaller than or equal to 50";
     }
 
     @GetMapping("/increment/{value}")
     public int increment(@PathVariable int value) {
         ResponseEntity<String> responseEntity = restTemplate.getForEntity(BASE_URL + "/" + value, String.class);
         String response = responseEntity.getBody();
-        logger.info("Value Received in Request - " + value);
-        logger.info("Node Service Response - " + response);
+        // Use format specifiers instead of concatenation
+        logger.info("Value Received in Request: {}", value);
+        logger.info("Node Service Response: {}", response);
         return Integer.parseInt(response);
     }
 }

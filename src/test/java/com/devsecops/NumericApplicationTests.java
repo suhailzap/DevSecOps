@@ -18,39 +18,38 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(NumericController.class)
-@WithMockUser(username = "user", roles = {"USER"}) // Mock an authenticated user to bypass Spring Security
+@WithMockUser(username = "user", roles = {"USER"})
 public class NumericApplicationTests {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean // Replace @MockBean with @MockitoBean
+    @MockitoBean
     private RestTemplate restTemplate;
 
     @Test
-    public void welcomeMessage() throws Exception {
+    void welcomeMessage() throws Exception {  // Removed 'public'
         this.mockMvc.perform(get("/")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Kubernetes DevSecOps"));
     }
 
     @Test
-    public void smallerThanOrEqualToFiftyMessage() throws Exception {
+    void smallerThanOrEqualToFiftyMessage() throws Exception {  // Removed 'public'
         this.mockMvc.perform(get("/compare/50")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Smaller than or equal to 50"));
     }
 
     @Test
-    public void greaterThanFiftyMessage() throws Exception {
+    void greaterThanFiftyMessage() throws Exception {  // Removed 'public'
         this.mockMvc.perform(get("/compare/51")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Greater than 50"));
     }
 
     @Test
-    public void incrementValue() throws Exception {
-        // Mock the RestTemplate response
+    void incrementValue() throws Exception {  // Removed 'public'
         when(restTemplate.getForEntity(anyString(), eq(String.class)))
                 .thenReturn(ResponseEntity.ok("51"));
 
