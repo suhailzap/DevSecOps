@@ -6,13 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean; // New import
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.mockito.Mockito;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,8 +20,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT) // Use random port to avoid conflicts
-@WithMockUser(username = "user", roles = {"USER"}) // Simulates an authenticated user
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@WithMockUser(username = "user", roles = {"USER"})
 class NumericApplicationTests {
 
     private MockMvc mockMvc;
@@ -31,20 +29,8 @@ class NumericApplicationTests {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @MockitoBean // Updated from @MockBean
     private RestTemplate restTemplate;
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public RestTemplate restTemplate() {
-            return Mockito.mock(RestTemplate.class);
-        }
-    }
-
-    @Autowired
-    public void setRestTemplate(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
 
     @BeforeEach
     void setUp() {

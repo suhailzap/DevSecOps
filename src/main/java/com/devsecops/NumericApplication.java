@@ -9,7 +9,7 @@ import org.springframework.web.client.RestTemplate;
 public class NumericApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(NumericApplication.class, args); // Entry point, typically not tested directly
+        SpringApplication.run(NumericApplication.class, args);
     }
 
     @Bean
