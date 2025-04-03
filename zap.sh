@@ -1,26 +1,3 @@
-# Ensure the target URL is accessible (optional connectivity check)
-echo "Checking if $applicationURL:$PORT is reachable..."
-curl -s --connect-timeout 5 "http://$applicationURL:$PORT/v3/api-docs" >/dev/null || {
-  echo "Warning: Could not reach http://$applicationURL:$PORT/v3/api-docs. Proceeding anyway..."
-}
-
-# Run OWASP ZAP scan using the specified image
-echo "Running OWASP ZAP scan on http://$applicationURL:$PORT/v3/api-docs..."
-docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-weekly zap-api-scan.py -t $applicationURL:$PORT/v3/api-docs -f openapi -c zap_rules -r zap_report.html
-exit_code=$?  # Captures the exit code of the docker run command
-
-# Create report directory and move the report
-mkdir -p owasp-zap-report
-if [ -f zap_report.html ]; then
-  mv zap_report.html owasp-zap-report/
-  echo "Report moved to owasp-zap-report/zap_report.html"
-else
-  echo "Warning: zap_report露
-
-### Full Script Context
-Here’s the full script again for clarity, with the added lines marked:
-
-```bash
 #!/bin/bash
 
 # Exit on any error
@@ -45,8 +22,8 @@ echo "Running as UID:GID $(id -u):$(id -g)"
 
 # Pull the OWASP ZAP image from Docker Hub with error handling
 echo "Pulling OWASP ZAP image..."
-docker pull owasp/zap2docker-weekly || {
-  echo "Failed to pull owasp/zap2docker-weekly. Check Docker Hub access or network."
+docker pull zaproxy/zap-stable:latest || {
+  echo "Failed to pull zaproxy/zap-stable:latest. Check Docker Hub access or network."
   exit 1
 }
 
@@ -56,10 +33,18 @@ curl -s --connect-timeout 5 "http://$applicationURL:$PORT/v3/api-docs" >/dev/nul
   echo "Warning: Could not reach http://$applicationURL:$PORT/v3/api-docs. Proceeding anyway..."
 }
 
-# Run OWASP ZAP scan using the specified image
+# Run OWASP ZAP scan using the pulled image
 echo "Running OWASP ZAP scan on http://$applicationURL:$PORT/v3/api-docs..."
-docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-weekly zap-api-scan.py -t $applicationURL:$PORT/v3/api-docs -f openapi -c zap_rules -r zap_report.html  # <--- Added line
-exit_code=$?  # <--- Added line to capture exit code
+docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable:latest zap-api-scan.py \
+  -t "http://$applicationURL:$PORT/v3/api-docs" \
+  -f openapi \
+  -r zap_report.html || {
+  echo "OWASP ZAP scan failed to execute."
+  exit 1
+}
+
+# Capture exit code
+exit_code=$?
 
 # Create report directory and move the report
 mkdir -p owasp-zap-report
