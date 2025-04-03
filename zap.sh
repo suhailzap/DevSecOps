@@ -33,12 +33,17 @@ curl -s --connect-timeout 5 "http://$applicationURL:$PORT/v3/api-docs" >/dev/nul
   echo "Warning: Could not reach http://$applicationURL:$PORT/v3/api-docs. Proceeding anyway..."
 }
 
-# Run OWASP ZAP scan using the pulled image
+# Create report directory with proper permissions before running the scan
+REPORT_DIR="owasp-zap-report"
+mkdir -p "$REPORT_DIR"
+chmod 777 "$REPORT_DIR"  # Ensure the directory is writable by the Docker user
+
+# Run OWASP ZAP scan using the pulled image, outputting directly to the report directory
 echo "Running OWASP ZAP scan on http://$applicationURL:$PORT/v3/api-docs..."
 docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable:latest zap-api-scan.py \
   -t "http://$applicationURL:$PORT/v3/api-docs" \
   -f openapi \
-  -r zap_report.html || {
+  -r "/zap/wrk/$REPORT_DIR/zap_report.html" || {
   echo "OWASP ZAP scan failed to execute."
   exit 1
 }
@@ -46,20 +51,18 @@ docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable:latest zap-api-scan.py
 # Capture exit code
 exit_code=$?
 
-# Create report directory and move the report
-mkdir -p owasp-zap-report
-if [ -f zap_report.html ]; then
-  mv zap_report.html owasp-zap-report/
-  echo "Report moved to owasp-zap-report/zap_report.html"
+# Check if the report was generated
+if [ -f "$REPORT_DIR/zap_report.html" ]; then
+  echo "Report generated at $REPORT_DIR/zap_report.html"
 else
-  echo "Warning: zap_report.html not generated."
+  echo "Warning: zap_report.html not generated in $REPORT_DIR."
 fi
 
 echo "Exit Code: $exit_code"
 
 # Interpret exit code
 if [ "$exit_code" -ne 0 ]; then
-  echo "OWASP ZAP Report has either Low/Medium/High Risk. Please check the HTML Report in owasp-zap-report/"
+  echo "OWASP ZAP Report has either Low/Medium/High Risk. Please check the HTML Report in $REPORT_DIR/"
   exit 1
 else
   echo "OWASP ZAP did not report any Risk"
