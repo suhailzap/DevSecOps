@@ -140,10 +140,10 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>10.0.4</version> <!-- Updated to latest -->
+                <version>12.1.0</version> <!-- Updated to latest -->
                 <configuration>
                     <format>ALL</format>
-                    <failBuildOnCVSS>15</failBuildOnCVSS> <!-- Kept as per your config -->
+                    <failBuildOnCVSS>9</failBuildOnCVSS> <!-- Kept as per your config -->
                 </configuration>
                 <executions>
                     <execution>
