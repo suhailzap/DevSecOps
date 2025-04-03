@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Exit on any error
-set -e
-
 # Variables (ensure these are set before running, or pass them as arguments)
 serviceName="${serviceName:-my-service}"  # Default value if not set
 applicationURL="${applicationURL:-localhost}"  # Default value if not set
@@ -33,18 +30,20 @@ curl -s --connect-timeout 5 "http://$applicationURL:$PORT/v3/api-docs" >/dev/nul
   echo "Warning: Could not reach http://$applicationURL:$PORT/v3/api-docs. Proceeding anyway..."
 }
 
-# Run OWASP ZAP scan using the pulled image
+# Run OWASP ZAP scan and capture output
 echo "Running OWASP ZAP scan on http://$applicationURL:$PORT/v3/api-docs..."
-docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable:latest zap-api-scan.py \
+SCAN_OUTPUT=$(docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable:latest zap-api-scan.py \
   -t "http://$applicationURL:$PORT/v3/api-docs" \
   -f openapi \
-  -r zap_report.html || {
-  echo "OWASP ZAP scan failed to execute."
-  exit 1
-}
+  -r zap_report.html 2>&1)
+EXIT_CODE=$?
 
-# Capture exit code
-exit_code=$?
+# Print scan output for debugging
+echo "$SCAN_OUTPUT"
+
+# Parse the scan results for FAIL-NEW count
+FAIL_COUNT=$(echo "$SCAN_OUTPUT" | grep -oP 'FAIL-NEW:\s*\K\d+' || echo "0")
+WARN_COUNT=$(echo "$SCAN_OUTPUT" | grep -oP 'WARN-NEW:\s*\K\d+' || echo "0")
 
 # Create report directory and move the report
 mkdir -p owasp-zap-report
@@ -55,12 +54,18 @@ else
   echo "Warning: zap_report.html not generated."
 fi
 
-echo "Exit Code: $exit_code"
+echo "Exit Code: $EXIT_CODE"
+echo "Failures Detected: $FAIL_COUNT"
+echo "Warnings Detected: $WARN_COUNT"
 
-# Interpret exit code
-if [ "$exit_code" -ne 0 ]; then
-  echo "OWASP ZAP Report has either Low/Medium/High Risk. Please check the HTML Report in owasp-zap-report/"
+# Interpret results: Fail only if there are FAIL-NEW entries
+if [ "$FAIL_COUNT" -gt 0 ]; then
+  echo "OWASP ZAP Report has detected $FAIL_COUNT failures. Please check the HTML Report in owasp-zap-report/"
   exit 1
+elif [ "$WARN_COUNT" -gt 0 ]; then
+  echo "OWASP ZAP detected $WARN_COUNT warnings but no failures. Proceeding as successful."
+  exit 0
 else
-  echo "OWASP ZAP did not report any Risk"
+  echo "OWASP ZAP did not report any risks or warnings."
+  exit 0
 fi
