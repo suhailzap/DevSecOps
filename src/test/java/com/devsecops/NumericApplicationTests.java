@@ -1,15 +1,17 @@
 package com.devsecops;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestTemplate;
 
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -22,8 +24,8 @@ public class NumericApplicationTests {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private WebClient webClient;
+    @MockitoBean // Replace @MockBean with @MockitoBean
+    private RestTemplate restTemplate;
 
     @Test
     public void welcomeMessage() throws Exception {
@@ -48,15 +50,9 @@ public class NumericApplicationTests {
 
     @Test
     public void incrementValue() throws Exception {
-        // Mock the WebClient chain
-        WebClient.RequestHeadersUriSpec<?> uriSpec = mock(WebClient.RequestHeadersUriSpec.class);
-        WebClient.RequestHeadersSpec<?> headersSpec = mock(WebClient.RequestHeadersSpec.class);
-        WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
-
-        doReturn(uriSpec).when(webClient).get();
-        doReturn(headersSpec).when(uriSpec).uri("/plusone/{value}", "50");
-        doReturn(responseSpec).when(headersSpec).retrieve();
-        doReturn(Mono.just("51")).when(responseSpec).bodyToMono(String.class);
+        // Mock the RestTemplate response
+        when(restTemplate.getForEntity(anyString(), eq(String.class)))
+                .thenReturn(ResponseEntity.ok("51"));
 
         this.mockMvc.perform(get("/increment/50")).andDo(print())
                 .andExpect(status().isOk())
