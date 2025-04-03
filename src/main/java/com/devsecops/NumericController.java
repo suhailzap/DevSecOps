@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientException;
 
 @RestController
 public class NumericController {
@@ -27,7 +28,6 @@ public class NumericController {
 
     @GetMapping("/compare/{value}")
     public String compareToFifty(@PathVariable int value) {
-        // Removed useless assignment to 'message'
         if (value > 50) {
             return "Greater than 50";
         }
@@ -36,11 +36,22 @@ public class NumericController {
 
     @GetMapping("/increment/{value}")
     public int increment(@PathVariable int value) {
-        ResponseEntity<String> responseEntity = restTemplate.getForEntity(BASE_URL + "/" + value, String.class);
-        String response = responseEntity.getBody();
-        // Use format specifiers instead of concatenation
-        logger.info("Value Received in Request: {}", value);
-        logger.info("Node Service Response: {}", response);
-        return Integer.parseInt(response);
+        try {
+            ResponseEntity<String> responseEntity = restTemplate.getForEntity(BASE_URL + "/" + value, String.class);
+            String response = responseEntity.getBody();
+            logger.info("Value Received in Request: {}", value);
+            logger.info("Node Service Response: {}", response);
+            // Handle potential null or invalid response
+            if (response == null || response.trim().isEmpty()) {
+                throw new IllegalStateException("Empty response from node service");
+            }
+            return Integer.parseInt(response);
+        } catch (RestClientException e) {
+            logger.error("Failed to call node service at {}: {}", BASE_URL, e.getMessage());
+            throw new RuntimeException("Error communicating with node service", e);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid response from node service: {}", e.getMessage());
+            throw new RuntimeException("Invalid number format in response", e);
+        }
     }
 }
