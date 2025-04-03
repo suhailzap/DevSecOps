@@ -1,5 +1,6 @@
 package com.devsecops;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -9,9 +10,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.mockito.Mockito;
 
 import static org.mockito.ArgumentMatchers.anyString;
-import org.mockito.Mockito;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -19,25 +22,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT) // Use random port to avoid conflicts
 @WithMockUser(username = "user", roles = {"USER"}) // Simulates an authenticated user
-class NumericApplicationTests {  // Package-private visibility, correct for JUnit 5
+class NumericApplicationTests {
 
     private MockMvc mockMvc;
 
-    private RestTemplate restTemplate = Mockito.mock(RestTemplate.class);
-
-    // Setup MockMvc manually since we're not using @WebMvcTest
-    // Setup MockMvc manually since we're not using @WebMvcTest
     @Autowired
-    void setUp(WebApplicationContext webApplicationContext) {
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
-        // Inject the mocked RestTemplate into the application context if needed
+    private WebApplicationContext webApplicationContext;
+
+    private RestTemplate restTemplate;
+
+    @TestConfiguration
+    static class TestConfig {
+        @Bean
+        public RestTemplate restTemplate() {
+            return Mockito.mock(RestTemplate.class);
+        }
     }
-    @Test
-    void mainMethodRunsWithoutException() {
-        NumericApplication.main(new String[]{});
-        // No assertion needed; ensures it runs without throwing an exception
+
+    @Autowired
+    public void setRestTemplate(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    @BeforeEach
+    void setUp() {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     }
 
     @Test

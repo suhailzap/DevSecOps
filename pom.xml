@@ -77,6 +77,12 @@
             <scope>test</scope>
         </dependency>
 
+<dependency>
+    <groupId>org.hibernate.validator</groupId>
+    <artifactId>hibernate-validator</artifactId>
+</dependency>
+
+
         <!-- Mockito JUnit 5 Extension (for better JUnit 5 integration) -->
         <dependency>
             <groupId>org.mockito</groupId>
