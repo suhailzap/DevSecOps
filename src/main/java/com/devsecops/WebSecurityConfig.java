@@ -13,7 +13,12 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Updated syntax to disable CSRF
+            // Disabling CSRF is safe here because:
+            // 1. All exposed endpoints (/increment/*, /, /compare/*) are GET requests, which are not state-changing.
+            // 2. The app is a backend API called by non-browser clients (e.g., curl, other services, or external clients via Istio).
+            // 3. The service is a ClusterIP, not directly exposed to the internet.
+            // Revisit this if state-changing endpoints (e.g., POST, PUT) are added or if browser-based clients are introduced.
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/increment/**").permitAll() // Allow unauthenticated access to /increment/*
                 .requestMatchers("/").permitAll() // Allow unauthenticated access to the root endpoint
