@@ -1,7 +1,6 @@
 package com.devsecops.com.devsecops;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -10,8 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 public class NumericApplicationIntegrationTest {
 
-    @Autowired
-    private WebClient webClient;
+    // Removed unused WebClient field
 
     @Test
     void contextLoads() {
