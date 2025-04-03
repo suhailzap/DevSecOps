@@ -48,7 +48,7 @@ public class NumericController {
     @GetMapping("/increment/{value}")
     public int increment(@PathVariable int value) {
         String url = BASE_URL + "/" + value;
-        String response = null; // Declare outside try block for use in catch
+        String response = null; // Declare outside try for use in catch blocks
         try {
             ResponseEntity<String> responseEntity = restTemplate.getForEntity(url, String.class);
             response = responseEntity.getBody();
@@ -56,15 +56,17 @@ public class NumericController {
             logger.info("Node Service Response: {}", response);
             // Handle potential null or invalid response
             if (response == null || response.trim().isEmpty()) {
+                logger.warn("Received empty or null response from node service for value: {}", value);
                 throw new NodeServiceException("Empty or null response from node service for value: " + value);
             }
             return Integer.parseInt(response);
         } catch (RestClientException e) { // Line 58
-            logger.error("Failed to call node service at URL: {} for value: {}", url, value, e);
-            throw new NodeServiceException("Failed to increment value " + value + " due to node service communication error", e);
+            logger.error("Failed to call node service at URL: {} for value: {}. Exception: {}", url, value, e.getMessage(), e);
+            throw new NodeServiceException("Failed to increment value " + value + " due to node service communication error: " + e.getMessage(), e);
         } catch (NumberFormatException e) { // Line 61
-            logger.error("Invalid response from node service at URL: {} for value: {}, received response: '{}'", url, value, response, e);
-            throw new NodeServiceException("Invalid number format in response '" + response + "' for value " + value, e);
+            logger.error("Invalid response from node service at URL: {} for value: {}. Received response: '{}'. Exception: {}", 
+                         url, value, response, e.getMessage(), e);
+            throw new NodeServiceException("Invalid number format in response '" + response + "' for value " + value + ": " + e.getMessage(), e);
         }
     }
 }
