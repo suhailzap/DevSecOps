@@ -18,8 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(NumericController.class)
-@WithMockUser(username = "user", roles = {"USER"})
-class NumericApplicationTests {  // Removed 'public'
+@WithMockUser(username = "user", roles = {"USER"}) // Simulates an authenticated user
+class NumericApplicationTests {  // Package-private visibility, correct for JUnit 5
 
     @Autowired
     private MockMvc mockMvc;
@@ -29,21 +29,24 @@ class NumericApplicationTests {  // Removed 'public'
 
     @Test
     void welcomeMessage() throws Exception {
-        this.mockMvc.perform(get("/")).andDo(print())
+        this.mockMvc.perform(get("/"))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Kubernetes DevSecOps"));
     }
 
     @Test
     void smallerThanOrEqualToFiftyMessage() throws Exception {
-        this.mockMvc.perform(get("/compare/50")).andDo(print())
+        this.mockMvc.perform(get("/compare/50"))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Smaller than or equal to 50"));
     }
 
     @Test
     void greaterThanFiftyMessage() throws Exception {
-        this.mockMvc.perform(get("/compare/51")).andDo(print())
+        this.mockMvc.perform(get("/compare/51"))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Greater than 50"));
     }
@@ -53,7 +56,8 @@ class NumericApplicationTests {  // Removed 'public'
         when(restTemplate.getForEntity(anyString(), eq(String.class)))
                 .thenReturn(ResponseEntity.ok("51"));
 
-        this.mockMvc.perform(get("/increment/50")).andDo(print())
+        this.mockMvc.perform(get("/increment/50"))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("51"));
     }
