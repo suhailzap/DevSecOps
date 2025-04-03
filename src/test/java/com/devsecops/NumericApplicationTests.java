@@ -1,5 +1,4 @@
-package com.devsecops.com.devsecops;
-
+package com.devsecops;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -55,7 +54,7 @@ public class NumericApplicationTests {
         WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
         doReturn(uriSpec).when(webClient).get();
-        doReturn(headersSpec).when(uriSpec).uri("/plusone/{value}", 50);
+        doReturn(headersSpec).when(uriSpec).uri("/plusone/{value}", "50");
         doReturn(responseSpec).when(headersSpec).retrieve();
         doReturn(Mono.just("51")).when(responseSpec).bodyToMono(String.class);
 
