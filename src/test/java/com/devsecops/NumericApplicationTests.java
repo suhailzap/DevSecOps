@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(NumericController.class)
 @WithMockUser(username = "user", roles = {"USER"})
-public class NumericApplicationTests {
+class NumericApplicationTests {  // Removed 'public'
 
     @Autowired
     private MockMvc mockMvc;
@@ -28,28 +28,28 @@ public class NumericApplicationTests {
     private RestTemplate restTemplate;
 
     @Test
-    void welcomeMessage() throws Exception {  // Removed 'public'
+    void welcomeMessage() throws Exception {
         this.mockMvc.perform(get("/")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Kubernetes DevSecOps"));
     }
 
     @Test
-    void smallerThanOrEqualToFiftyMessage() throws Exception {  // Removed 'public'
+    void smallerThanOrEqualToFiftyMessage() throws Exception {
         this.mockMvc.perform(get("/compare/50")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Smaller than or equal to 50"));
     }
 
     @Test
-    void greaterThanFiftyMessage() throws Exception {  // Removed 'public'
+    void greaterThanFiftyMessage() throws Exception {
         this.mockMvc.perform(get("/compare/51")).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string("Greater than 50"));
     }
 
     @Test
-    void incrementValue() throws Exception {  // Removed 'public'
+    void incrementValue() throws Exception {
         when(restTemplate.getForEntity(anyString(), eq(String.class)))
                 .thenReturn(ResponseEntity.ok("51"));
 
