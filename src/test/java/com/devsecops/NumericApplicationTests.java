@@ -2,14 +2,16 @@ package com.devsecops;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.WebApplicationContext;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import org.mockito.Mockito;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -17,15 +19,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(NumericController.class)
+@SpringBootTest
 @WithMockUser(username = "user", roles = {"USER"}) // Simulates an authenticated user
 class NumericApplicationTests {  // Package-private visibility, correct for JUnit 5
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
-    private RestTemplate restTemplate;
+    private RestTemplate restTemplate = Mockito.mock(RestTemplate.class);
+
+    // Setup MockMvc manually since we're not using @WebMvcTest
+    // Setup MockMvc manually since we're not using @WebMvcTest
+    @Autowired
+    void setUp(WebApplicationContext webApplicationContext) {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        // Inject the mocked RestTemplate into the application context if needed
+    }
+    @Test
+    void mainMethodRunsWithoutException() {
+        NumericApplication.main(new String[]{});
+        // No assertion needed; ensures it runs without throwing an exception
+    }
 
     @Test
     void welcomeMessage() throws Exception {
