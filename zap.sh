@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Exit on any error
+# Exit on critical errors only (we'll handle non-critical ones manually)
 set -e
 
 # Variables (ensure these are set before running, or pass them as arguments)
@@ -14,7 +14,7 @@ if [ -z "$PORT" ] || [ "$PORT" == "null" ]; then
   exit 1
 fi
 
-# Ensure the script has proper permissions (self-modify only if needed)
+# Ensure the script is executable (self-modify only if needed)
 if [ ! -x "$0" ]; then
   chmod u+x "$0"
 fi
@@ -33,12 +33,22 @@ curl -s --connect-timeout 5 "http://$applicationURL:$PORT/v3/api-docs" >/dev/nul
   echo "Warning: Could not reach http://$applicationURL:$PORT/v3/api-docs. Proceeding anyway..."
 }
 
-# Create report directory with proper permissions before running the scan
+# Create report directory with proper permissions
 REPORT_DIR="owasp-zap-report"
-mkdir -p "$REPORT_DIR"
-chmod 777 "$REPORT_DIR"  # Ensure the directory is writable by the Docker user
+if [ -d "$REPORT_DIR" ] && [ ! -w "$REPORT_DIR" ]; then
+  echo "Warning: $REPORT_DIR exists but is not writable. Using fallback directory."
+  REPORT_DIR="owasp-zap-report-$(id -u)-tmp"
+fi
 
-# Run OWASP ZAP scan using the pulled image, outputting directly to the report directory
+# Create the directory with permissive permissions for the current user
+mkdir -p "$REPORT_DIR" || {
+  echo "Error: Failed to create $REPORT_DIR. Check permissions."
+  exit 1
+}
+# Attempt to set permissions, but don't fail if it doesn't work
+chmod 775 "$REPORT_DIR" 2>/dev/null || echo "Warning: Could not set permissions on $REPORT_DIR. Proceeding with existing permissions."
+
+# Run OWASP ZAP scan, outputting directly to the report directory
 echo "Running OWASP ZAP scan on http://$applicationURL:$PORT/v3/api-docs..."
 docker run -v "$(pwd)":/zap/wrk/:rw -t zaproxy/zap-stable:latest zap-api-scan.py \
   -t "http://$applicationURL:$PORT/v3/api-docs" \
