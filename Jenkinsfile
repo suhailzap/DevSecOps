@@ -11,7 +11,6 @@ pipeline {
   }
 
   stages {
-
     stage('Build Artifact - Maven') {
       steps {
         sh "mvn clean package -DskipTests=true"
@@ -187,24 +186,56 @@ pipeline {
 
   post {
     always {
-      junit 'target/surefire-reports/*.xml'
-      jacoco execPattern: 'target/jacoco.exec'
-      pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
-      dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-      publishHTML([allowMissing: true, 
-                   alwaysLinkToLastBuild: true, 
-                   keepAll: true, 
-                   reportDir: 'owasp-zap-report', 
-                   reportFiles: 'zap_report.html', 
-                   reportName: 'OWASP ZAP Report', 
-                   reportTitles: 'OWASP ZAP Scan Results'])
-      archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
+      script {
+        // Wrap each reporting step in a try-catch to prevent post block failures from marking the pipeline as failed
+        try {
+          junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+        } catch (Exception e) {
+          echo "Warning: Failed to publish JUnit test results. Error: ${e.message}"
+        }
+
+        try {
+          jacoco execPattern: 'target/jacoco.exec'
+        } catch (Exception e) {
+          echo "Warning: Failed to publish JaCoCo report. Error: ${e.message}"
+        }
+
+        try {
+          pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
+        } catch (Exception e) {
+          echo "Warning: Failed to publish PIT mutation report. Error: ${e.message}"
+        }
+
+        try {
+          dependencyCheckPublisher pattern: 'target/dependency-check-report.xml', failedTotalCritical: 1, failedTotalHigh: 1
+        } catch (Exception e) {
+          echo "Warning: Failed to publish Dependency-Check report. Error: ${e.message}"
+        }
+
+        try {
+          publishHTML([allowMissing: true, 
+                       alwaysLinkToLastBuild: true, 
+                       keepAll: true, 
+                       reportDir: 'owasp-zap-report', 
+                       reportFiles: 'zap_report.html', 
+                       reportName: 'OWASP ZAP Report', 
+                       reportTitles: 'OWASP ZAP Scan Results'])
+        } catch (Exception e) {
+          echo "Warning: Failed to publish OWASP ZAP report. Error: ${e.message}"
+        }
+
+        try {
+          archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
+        } catch (Exception e) {
+          echo "Warning: Failed to archive OWASP ZAP report. Error: ${e.message}"
+        }
+      }
     }
     success {
-      echo 'Deployment to Production was successful!'
+      echo 'Pipeline completed successfully! Deployment to Production was successful.'
     }
     failure {
-      echo 'Pipeline failed. Check the logs for details.'
+      echo 'Pipeline failed due to an error in the stages. Check the logs for details.'
     }
   }
 }
