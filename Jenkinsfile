@@ -6,8 +6,8 @@ pipeline {
     containerName = "devsecops-container"
     serviceName = "devsecops-svc"
     imageName = "suhailsap06/numeric-app:${GIT_COMMIT}"
-    applicationURL="devsecops-k8.eastus.cloudapp.azure.com"
-    applicationURI="/increment/99"
+    applicationURL = "devsecops-k8.eastus.cloudapp.azure.com"
+    applicationURI = "/increment/99"
   }
 
   stages {
@@ -24,6 +24,7 @@ pipeline {
         sh "mvn test"
       }
     }
+
     stage('Mutation Tests - PIT') {
       steps {
         sh "mvn org.pitest:pitest-maven:mutationCoverage"
@@ -34,8 +35,8 @@ pipeline {
       steps {
         withSonarQubeEnv('SonarQube') {
           sh "mvn sonar:sonar \
-		              -Dsonar.projectKey=numeric-application \
-		              -Dsonar.host.url=http://devsecops-k8.eastus.cloudapp.azure.com:9000"
+                -Dsonar.projectKey=numeric-application \
+                -Dsonar.host.url=http://devsecops-k8.eastus.cloudapp.azure.com:9000"
         }
         timeout(time: 2, unit: 'MINUTES') {
           script {
@@ -45,32 +46,32 @@ pipeline {
       }
     }
 
-stage('Vulnerability Scan - Docker') {
-  steps {
-    parallel(
-      "Dependency Scan": {
-        sh "mvn dependency-check:check"
-        sh "ls -l target/dependency-check-report.xml || echo 'Dependency-Check report not found'"
-      },
-      "Trivy Scan": {
-        sh "bash trivy-docker-image-scan.sh"
-      },
-      "OPA Conftest": {
-        sh 'docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile'
+    stage('Vulnerability Scan - Docker') {
+      steps {
+        parallel(
+          "Dependency Scan": {
+            sh "mvn dependency-check:check"
+            sh "ls -l target/dependency-check-report.xml || echo 'Dependency-Check report not found'"
+          },
+          "Trivy Scan": {
+            sh "bash trivy-docker-image-scan.sh"
+          },
+          "OPA Conftest": {
+            sh 'docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile'
+          }
+        )
       }
-    )
-  }
-}
+    }
 
-        stage('Docker Build and Push') {
-            steps {
-                withDockerRegistry([credentialsId: 'dockerhub', url: '']) {
-                    sh 'printenv'
-                    sh 'sudo docker build -t suhailsap06/numeric-app:"$GIT_COMMIT" .'
-                    sh 'docker push suhailsap06/numeric-app:"$GIT_COMMIT"'
-                }
-            }
+    stage('Docker Build and Push') {
+      steps {
+        withDockerRegistry([credentialsId: 'dockerhub', url: '']) {
+          sh 'printenv'
+          sh 'sudo docker build -t suhailsap06/numeric-app:"$GIT_COMMIT" .'
+          sh 'docker push suhailsap06/numeric-app:"$GIT_COMMIT"'
         }
+      }
+    }
 
     stage('Vulnerability Scan - Kubernetes') {
       steps {
@@ -104,6 +105,7 @@ stage('Vulnerability Scan - Docker') {
         )
       }
     }
+
     stage('Integration Tests - DEV') {
       steps {
         script {
@@ -119,8 +121,9 @@ stage('Vulnerability Scan - Docker') {
           }
         }
       }
-    }  
-   stage('OWASP ZAP - DAST') {
+    }
+
+    stage('OWASP ZAP - DAST') {
       steps {
         withKubeConfig([credentialsId: 'kubeconfig']) {
           sh 'bash zap.sh'
@@ -128,19 +131,17 @@ stage('Vulnerability Scan - Docker') {
       }
     }
 
-
-      stage('Prompte to PROD?') {
+    stage('Prompt to PROD?') {
       steps {
         timeout(time: 2, unit: 'DAYS') {
-          input 'Do you want to Approve the Deployment to Production Environment/Namespace?'
+          input message: 'Do you want to Approve the Deployment to Production Environment/Namespace?', ok: 'Approve'
         }
       }
     }
 
-           stage('K8S CIS Benchmark') {
+    stage('K8S CIS Benchmark') {
       steps {
         script {
-
           parallel(
             "Master": {
               sh "bash cis-master.sh"
@@ -152,10 +153,10 @@ stage('Vulnerability Scan - Docker') {
               sh "bash cis-kubelet.sh"
             }
           )
-
         }
       }
     }
+
     stage('K8S Deployment - PROD') {
       steps {
         parallel(
@@ -173,22 +174,37 @@ stage('Vulnerability Scan - Docker') {
         )
       }
     }
+
+    stage('Verify PROD Deployment') {
+      steps {
+        withKubeConfig([credentialsId: 'kubeconfig']) {
+          sh "kubectl -n prod get pods -l app=devsecops"
+          sh "curl -s http://${applicationURL}:30997${applicationURI}"
+        }
+      }
+    }
   }
 
-post {
-  always {
-    junit 'target/surefire-reports/*.xml'
-    jacoco execPattern: 'target/jacoco.exec'
-    pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
-    dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-    publishHTML([allowMissing: true, 
-                 alwaysLinkToLastBuild: true, 
-                 keepAll: true, 
-                 reportDir: 'owasp-zap-report', 
-                 reportFiles: 'zap_report.html', 
-                 reportName: 'OWASP ZAP Report', 
-                 reportTitles: 'OWASP ZAP Scan Results'])
-    archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
-   }
+  post {
+    always {
+      junit 'target/surefire-reports/*.xml'
+      jacoco execPattern: 'target/jacoco.exec'
+      pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
+      dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+      publishHTML([allowMissing: true, 
+                   alwaysLinkToLastBuild: true, 
+                   keepAll: true, 
+                   reportDir: 'owasp-zap-report', 
+                   reportFiles: 'zap_report.html', 
+                   reportName: 'OWASP ZAP Report', 
+                   reportTitles: 'OWASP ZAP Scan Results'])
+      archiveArtifacts artifacts: 'owasp-zap-report/zap_report.html', allowEmptyArchive: true
+    }
+    success {
+      echo 'Deployment to Production was successful!'
+    }
+    failure {
+      echo 'Pipeline failed. Check the logs for details.'
+    }
   }
 }
