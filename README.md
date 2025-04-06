@@ -223,6 +223,9 @@ This project uses **GitHub Actions** for CI/CD (see `.github/workflows/devsecops
   - **Extras**: HELM 📦, advanced Slack notifications 🎨
 
 
+![falco Graph](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/slack-notify.png)
+
+
 ----
 ## ✅ Verify Deployment
 

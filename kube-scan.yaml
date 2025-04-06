@@ -466,6 +466,13 @@ spec:
               value: "mailto:info@octarinesec.com?subject=Octarine%20Contact%20Request"
             - name: WEBSITE_LINK
               value: "https://www.octarinesec.com"
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
         - name: kube-scan
           image: siddharth67/kubescan-scanner
           env:
@@ -479,6 +486,13 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /etc/kubescan
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
       volumes:
         - name: config
           configMap:
