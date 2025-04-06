@@ -208,13 +208,20 @@ This project uses **GitHub Actions** for CI/CD (see `.github/workflows/devsecops
 ### 🛡️ Kubernetes Security
 - **Features**:
   - **Istio Service Mesh**: mTLS 🔐, Kiali 📊
-  - **Monitoring**: Falco 🚨, Kube-scan 🔎
-  - **Deployment**: Prod namespace 🌍, CIS benchmarks ✅
-  - **Extras**: HELM 📦, advanced Slack notifications 🎨
 - **Kiali Traffic Graph**:
   Below is a screenshot of the Kiali dashboard showing the traffic flow between services in the `default` and `prod` namespaces for the `devsecops` application:
 
   ![Kiali Traffic Graph](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/kiali-screenshot.png)
+  - **Grafana**:
+![Grafana Dashboard](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/grafana.png)
+
+  - **Monitoring**: Falco 🚨, Kube-scan 🔎
+
+![falco Graph](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/falco.png)
+
+  - **Deployment**: Prod namespace 🌍, CIS benchmarks ✅
+  - **Extras**: HELM 📦, advanced Slack notifications 🎨
+
 
 ----
 ## ✅ Verify Deployment
