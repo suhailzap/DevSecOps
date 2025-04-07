@@ -111,7 +111,7 @@ To run this demo, you’ll need:
   ```
 
 ### 3️⃣ Alternative Run the GitHub Actions Workflow
-
+![Jenkins Pipeline](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/git-action.png)
 
 This project uses **GitHub Actions** for CI/CD (see `.github/workflows/devsecops.yml`):
 - **Workflow Overview**:
