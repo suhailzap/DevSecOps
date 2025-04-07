@@ -110,7 +110,9 @@ To run this demo, you’ll need:
   kubectl apply -f k8s/k8s_deployment_service.yaml
   ```
 
-### 3️⃣ Run the GitHub Actions Workflow
+### 3️⃣ Alternative Run the GitHub Actions Workflow
+
+
 This project uses **GitHub Actions** for CI/CD (see `.github/workflows/devsecops.yml`):
 - **Workflow Overview**:
   - Builds the app.
@@ -137,7 +139,7 @@ This project uses **GitHub Actions** for CI/CD (see `.github/workflows/devsecops
   ```
 - **Trigger**: Push to `main` branch.
 
-### 4️⃣ Alternative CI/CD with Jenkins
+### 4️⃣  CI/CD with Jenkins
 - Instead of GitHub Actions, you could use **Jenkins**:
   - **Pipeline Example**:
     ```groovy
@@ -158,6 +160,9 @@ This project uses **GitHub Actions** for CI/CD (see `.github/workflows/devsecops
 ## 📊 Diagrams
 
 ### 1. DevSecOps Pipeline
+
+![Jenkins Pipeline](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/jenkins.png)
+
 **Description**: Flowchart of the pipeline (Build → Test → Secure → Deploy).
 - **Mermaid Code**:
   ```mermaid
