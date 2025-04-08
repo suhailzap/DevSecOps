@@ -475,6 +475,7 @@ spec:
               cpu: "250m"
         - name: kube-scan
           image: siddharth67/kubescan-scanner
+          command: ["sleep", "3600"]
           env:
             - name: KUBESCAN_PORT
               value: "80"
