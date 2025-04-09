@@ -231,6 +231,7 @@ This project uses **GitHub Actions** for CI/CD (see `.github/workflows/devsecops
 ![falco Graph](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/slack-notify.png)
 
 
+![Jenkins Pipeline](https://raw.githubusercontent.com/suhailzap/DevSecOps/main/images/kube-scan.png)
 ----
 ## ✅ Verify Deployment
 
