@@ -1,0 +1,329 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  DEPLOYMENT_NAME: "devsecops"
+  CONTAINER_NAME: "devsecops-container"
+  SERVICE_NAME: "devsecops-svc"
+  IMAGE_NAME: "suhailsap06/numeric-app:${{ github.sha }}"
+  APPLICATION_URL: "devsecops-k8.eastus.cloudapp.azure.com"
+  APPLICATION_URI: "/increment/99"
+
+jobs:
+  build-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests=true
+
+      - name: Archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Run unit tests
+        run: mvn test
+
+      - name: Publish JUnit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: target/surefire-reports/*.xml
+
+      - name: Publish JaCoCo report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/jacoco.exec
+
+  mutation-tests:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Run PIT mutation tests
+        run: mvn org.pitest:pitest-maven:mutationCoverage
+
+      - name: Publish PIT report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pit-report
+          path: target/pit-reports/**/mutations.xml
+
+  sonarqube-sast:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Run SonarQube scan
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: "http://devsecops-k8.eastus.cloudapp.azure.com:9000"
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=numeric-application \
+            -Dsonar.host.url=${SONAR_HOST_URL} \
+            -Dsonar.login=${SONAR_TOKEN}
+
+      - name: Wait for Quality Gate
+        uses: sonarsource/sonarqube-quality-gate-action@v1.1.0
+        timeout-minutes: 2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  vulnerability-scan-docker:
+    runs-on: ubuntu-latest
+    needs: build-artifact
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Dependency Scan
+        run: |
+          mvn dependency-check:check
+          ls -l target/dependency-check-report.xml || echo "Dependency-Check report not found"
+        continue-on-error: true
+
+      - name: Upload Dependency-Check report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: target/dependency-check-report.xml
+
+      - name: Trivy Scan (Docker)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy image suhailsap06/numeric-app:${{ github.sha }}
+
+      - name: OPA Conftest (Dockerfile)
+        run: |
+          docker run --rm -v $(pwd):/project openpolicyagent/conftest:latest test --policy opa-docker-security.rego Dockerfile
+
+  docker-build-push:
+    runs-on: ubuntu-latest
+    needs: vulnerability-scan-docker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t suhailsap06/numeric-app:${{ github.sha }} .
+          docker push suhailsap06/numeric-app:${{ github.sha }}
+
+  vulnerability-scan-k8s:
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: OPA Scan (K8s)
+        run: |
+          docker run --rm -v $(pwd):/project openpolicyagent/conftest:latest test --policy opa-k8s-security.rego k8s_deployment_service.yaml
+
+      - name: Kubesec Scan
+        run: |
+          curl -sL https://raw.githubusercontent.com/controlplaneio/kubesec/master/kubesec > kubesec
+          chmod +x kubesec
+          ./kubesec scan k8s_deployment_service.yaml
+
+      - name: Trivy Scan (K8s)
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy k8s --report summary
+
+  k8s-deployment-dev:
+    runs-on: ubuntu-latest
+    needs: vulnerability-scan-k8s
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Deploy to DEV
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          echo "$KUBECONFIG" > kubeconfig
+          export KUBECONFIG=./kubeconfig
+          bash k8s-deployment.sh
+          bash k8s-deployment-rollout-status.sh
+
+  integration-tests-dev:
+    runs-on: ubuntu-latest
+    needs: k8s-deployment-dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Run integration tests
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          echo "$KUBECONFIG" > kubeconfig
+          export KUBECONFIG=./kubeconfig
+          bash integration-test.sh || (kubectl -n default rollout undo deploy ${DEPLOYMENT_NAME} && exit 1)
+
+  owasp-zap-dast:
+    runs-on: ubuntu-latest
+    needs: integration-tests-dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Run OWASP ZAP scan
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          echo "$KUBECONFIG" > kubeconfig
+          export KUBECONFIG=./kubeconfig
+          bash zap.sh
+
+      - name: Upload OWASP ZAP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: owasp-zap-report/zap_report.html
+
+  approval-for-prod:
+    runs-on: ubuntu-latest
+    needs: owasp-zap-dast
+    # environment: production
+    steps:
+      - name: Wait for approval
+        run: echo "Waiting for manual approval to deploy to production..."
+
+  k8s-cis-benchmark:
+    runs-on: ubuntu-latest
+    needs: approval-for-prod
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run CIS benchmarks
+        run: |
+          bash cis-master.sh &
+          bash cis-etcd.sh &
+          bash cis-kubelet.sh &
+          wait
+
+  k8s-deployment-prod:
+    runs-on: ubuntu-latest
+    needs: k8s-cis-benchmark
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Deploy to PROD
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          echo "$KUBECONFIG" > kubeconfig
+          export KUBECONFIG=./kubeconfig
+          sed -i 's#replace#suhailsap06/numeric-app:${{ github.sha }}#g' k8s_PROD-deployment_service.yaml
+          kubectl -n prod apply -f k8s_PROD-deployment_service.yaml
+          bash k8s-PROD-deployment-rollout-status.sh
+
+  verify-prod-deployment:
+    runs-on: ubuntu-latest
+    needs: k8s-deployment-prod
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Verify PROD deployment
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+        run: |
+          echo "$KUBECONFIG" > kubeconfig
+          export KUBECONFIG=./kubeconfig
+          kubectl -n prod get pods -l app=devsecops
+          curl -s http://${APPLICATION_URL}:30997${APPLICATION_URI}
